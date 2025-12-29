@@ -1,0 +1,7 @@
+{
+  "name": "Graham Bell Voice AI",
+  "description": "AI-Powered Voice Automation for Real Business Conversations. Transform phone operations with intelligent, autonomous voice agents.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

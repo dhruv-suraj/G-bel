@@ -8,7 +8,7 @@ const Features: React.FC = () => {
     { icon: Terminal, title: "LOGGING", desc: "Binary accuracy logs." },
     { icon: Fingerprint, title: "IDENTITY", desc: "Voice biometrics active." },
     { icon: Database, title: "RECORDS", desc: "Obsidian-tier storage." },
-    { icon: Activity, title: "SENTIMENT", desc: "Emotion-aware response." },
+    { icon: Activity, title: "ANALYTICS", desc: "Real-time call insights." },
     { icon: Shield, title: "SECURE", desc: "End-to-end encrypted." },
   ];
 

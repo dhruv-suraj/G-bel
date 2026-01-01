@@ -40,7 +40,7 @@ const Hero: React.FC<HeroProps> = ({ onOpenDemo }) => {
           >
             <h1 className="text-7xl md:text-[12rem] font-serif font-black text-ghost leading-[0.8] tracking-tighter mb-4">
               GRAHAM<br/>
-              <span className="text-outline italic">BELL.</span>
+              <span className="text-ghost italic">BELL.</span>
             </h1>
           </motion.div>
 
@@ -61,9 +61,9 @@ const Hero: React.FC<HeroProps> = ({ onOpenDemo }) => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={onOpenDemo}
-              className="px-16 py-8 bg-blaze text-obsidian font-serif italic text-3xl font-black rounded-none transition-all relative overflow-hidden group shadow-[0_0_80px_rgba(255,77,0,0.2)]"
+              className="px-12 py-6 bg-blaze text-obsidian font-serif italic text-2xl md:text-3xl font-black rounded-none transition-all relative overflow-hidden group shadow-[0_0_80px_rgba(255,77,0,0.2)] flex-shrink-0"
             >
-              <span className="relative z-10">INITIATE_SYNC</span>
+              <span className="relative z-10 whitespace-nowrap">INITIATE_SYNC</span>
               <div className="absolute inset-0 bg-white translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-500 ease-out" />
             </motion.button>
           </div>

@@ -2,7 +2,7 @@ import React from 'react';
 
 const Footer: React.FC = () => {
   return (
-    <footer className="bg-obsidian py-40 border-t border-white/5 relative overflow-hidden">
+    <footer id="about" className="bg-obsidian py-40 border-t border-white/5 relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4">
         <div className="grid md:grid-cols-2 gap-24 items-end">
           
@@ -24,7 +24,6 @@ const Footer: React.FC = () => {
           <div className="flex flex-col space-y-4 font-mono text-[9px] text-slate-600 uppercase tracking-[0.5em] md:text-right">
              <span>© 2025 GRAHAM BELL INC.</span>
              <span>VOICE INTELLIGENCE DIVISION</span>
-             <span>SAN FRANCISCO / LONDON / TOKYO</span>
              <div className="flex justify-end space-x-4 pt-4 text-blaze">
                 <a href="#">TWITTER</a>
                 <a href="#">LINKEDIN</a>

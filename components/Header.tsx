@@ -13,15 +13,15 @@ const Header: React.FC<HeaderProps> = ({ onOpenDemo }) => {
       animate={{ opacity: 1 }}
       transition={{ delay: 2 }}
     >
-      <div className="flex items-baseline space-x-2">
-        <span className="font-serif font-black text-2xl tracking-tighter text-white italic">GB.</span>
+      <a href="#" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="flex items-baseline space-x-2 cursor-pointer">
+        <span className="font-serif font-black text-2xl tracking-tighter text-white italic">Graham Bell</span>
         <span className="font-mono text-[8px] tracking-[0.3em] text-white opacity-40 uppercase">Voice Intel</span>
-      </div>
+      </a>
 
       <nav className="hidden lg:flex space-x-12">
-        {['INTEL', 'CASES', 'ABOUT'].map((item) => (
-          <a key={item} href="#" className="font-mono text-[10px] tracking-widest text-white hover:text-blaze transition-colors">{item}</a>
-        ))}
+        <a href="#features" className="font-mono text-[10px] tracking-widest text-white hover:text-blaze transition-colors">INTEL</a>
+        <a href="#use-cases" className="font-mono text-[10px] tracking-widest text-white hover:text-blaze transition-colors">CASES</a>
+        <a href="#about" className="font-mono text-[10px] tracking-widest text-white hover:text-blaze transition-colors">ABOUT</a>
       </nav>
 
       <button 

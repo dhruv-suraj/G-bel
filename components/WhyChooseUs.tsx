@@ -13,15 +13,19 @@ const advantages = [
 
 const NeuralConnection: React.FC<{ start: [number, number], end: [number, number], active: boolean }> = ({ start, end, active }) => {
   return (
-    <svg className="absolute inset-0 w-full h-full overflow-visible pointer-events-none z-0">
+    <svg
+      className="absolute inset-0 w-full h-full overflow-visible pointer-events-none z-0"
+      viewBox="0 0 100 100"
+      preserveAspectRatio="none"
+    >
       <motion.path
         d={`M ${50 + start[0]} ${50 + start[1]} L ${50 + end[0]} ${50 + end[1]}`}
-        stroke={active ? "#FF4D00" : "rgba(5, 5, 5, 0.04)"}
-        strokeWidth={active ? "6" : "1"}
+        stroke={active ? "#FF4D00" : "rgba(5, 5, 5, 0.15)"}
+        strokeWidth={active ? "0.8" : "0.15"}
         fill="none"
         initial={{ pathLength: 0, opacity: 0 }}
         whileInView={{ pathLength: 1, opacity: 1 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
       />
     </svg>
   );

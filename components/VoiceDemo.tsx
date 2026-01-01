@@ -35,7 +35,7 @@ const VoiceDemo: React.FC<VoiceDemoProps> = ({ isOpen, onClose }) => {
   const startSession = async () => {
     try {
       setStatus('connecting');
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_API_KEY });
       inputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
       outputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
       

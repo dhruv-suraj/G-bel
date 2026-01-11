@@ -11,14 +11,20 @@ interface VoiceDemoProps {
 const VoiceDemo: React.FC<VoiceDemoProps> = ({ isOpen, onClose }) => {
   const [status, setStatus] = useState<'idle' | 'connecting' | 'connected' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
-  
+  const [playingAudio, setPlayingAudio] = useState<string | null>(null);
+  const [isPaused, setIsPaused] = useState(false);
+
   const nextStartTimeRef = useRef<number>(0);
   const inputAudioContextRef = useRef<AudioContext | null>(null);
   const outputAudioContextRef = useRef<AudioContext | null>(null);
   const sourcesRef = useRef<Set<AudioBufferSourceNode>>(new Set());
   const streamRef = useRef<MediaStream | null>(null);
   const sessionPromiseRef = useRef<Promise<any> | null>(null);
-  
+  const currentUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const currentAudioTypeRef = useRef<string | null>(null);
+  const scriptProcessorRef = useRef<ScriptProcessorNode | null>(null);
+  const mediaStreamSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animationFrameRef = useRef<number>();
@@ -31,6 +37,153 @@ const VoiceDemo: React.FC<VoiceDemoProps> = ({ isOpen, onClose }) => {
     }
     return () => stopSession();
   }, [isOpen]);
+
+  const muteGeminiAudio = () => {
+    // Disconnect the script processor to stop sending microphone data to Gemini
+    if (scriptProcessorRef.current && mediaStreamSourceRef.current) {
+      try {
+        scriptProcessorRef.current.disconnect();
+        mediaStreamSourceRef.current.disconnect();
+      } catch (e) {
+        console.debug('Error disconnecting audio nodes:', e);
+      }
+    }
+
+    // Stop all currently playing Gemini audio
+    sourcesRef.current.forEach(source => {
+      try {
+        source.stop();
+      } catch (e) {}
+    });
+    sourcesRef.current.clear();
+  };
+
+  const unmuteGeminiAudio = () => {
+    // Reconnect the script processor to resume sending microphone data
+    if (scriptProcessorRef.current && mediaStreamSourceRef.current && inputAudioContextRef.current) {
+      try {
+        mediaStreamSourceRef.current.connect(scriptProcessorRef.current);
+        scriptProcessorRef.current.connect(inputAudioContextRef.current.destination);
+      } catch (e) {
+        console.debug('Error reconnecting audio nodes:', e);
+      }
+    }
+  };
+
+  const playPrerecordedAudio = (audioType: string) => {
+    // Audio scripts based on website content with natural pauses
+    const audioScripts: { [key: string]: string } = {
+      'current-issues': `Legacy systems are failing enterprises across the board. Human operators cost you 98% more than they should...
+      Wait times are killing customer satisfaction. Manual dialing wastes precious hours... Data sits in silos, invisible to decision makers.
+      These are systemic inefficiencies that plague 100% of analyzed enterprises. The old way, is obsolete.`,
+
+      'use-cases': `We've deployed autonomous voice agents across critical sectors...
+      Political outreach? 100,000 calls per hour for mass-scale legislative lobbying and voter sentiment analysis.
+      Healthcare logistics? HIPAA secure patient scheduling with zero human latency, fully automated, end to end.
+      Financial services? Bank grade encrypted, real-time biometric voice analysis for fraud detection and identity verification.
+      Enterprise support? 92% deflection rate, completely eliminating Level 1 human support tiers through infinite scaling voice nodes.`,
+
+      'what-we-provide': `Graham Bell delivers six core capabilities...
+      Outbound: massive scale execution for autonomous calling campaigns.
+      Logging: binary accuracy logs with complete transparency.
+      Identity: active voice biometrics for secure authentication.
+      Records: obsidian tier storage with full data sovereignty.
+      Analytics: real-time call insights and performance metrics.
+      Security: end to end encryption, bank grade protection.
+      This is the neural voice interface for the sovereign enterprise... Absolute precision... Infinite scale... No human debt.`
+    };
+
+    // Check if clicking the same button
+    if (currentAudioTypeRef.current === audioType) {
+      // Toggle pause/resume
+      if (window.speechSynthesis.paused) {
+        // Resume
+        window.speechSynthesis.resume();
+        setIsPaused(false);
+        muteGeminiAudio(); // Keep Gemini muted while playing
+      } else if (window.speechSynthesis.speaking) {
+        // Pause
+        window.speechSynthesis.pause();
+        setIsPaused(true);
+        unmuteGeminiAudio(); // Unmute Gemini when paused
+      }
+      return;
+    }
+
+    // Stop any currently playing speech
+    if (window.speechSynthesis.speaking || window.speechSynthesis.paused) {
+      window.speechSynthesis.cancel();
+    }
+
+    const script = audioScripts[audioType];
+    if (!script) return;
+
+    // Mute Gemini audio while playing pre-recorded audio
+    muteGeminiAudio();
+
+    setPlayingAudio(audioType);
+    setIsPaused(false);
+    currentAudioTypeRef.current = audioType;
+
+    const utterance = new SpeechSynthesisUtterance(script);
+    utterance.rate = 1.0; // Normal speed for more natural sound
+    utterance.pitch = 1.0; // Normal pitch
+    utterance.volume = 1.0;
+    currentUtteranceRef.current = utterance;
+
+    // Load voices and select the best natural-sounding one
+    const loadVoices = () => {
+      const voices = window.speechSynthesis.getVoices();
+
+      // Priority order for more natural voices
+      const preferredVoice = voices.find(voice =>
+        // Premium voices (macOS/iOS)
+        voice.name.includes('Samantha') ||
+        voice.name.includes('Alex') ||
+        voice.name.includes('Daniel') ||
+        voice.name.includes('Karen') ||
+        // Google voices
+        voice.name.includes('Google US English') ||
+        voice.name.includes('Google UK English Male') ||
+        // Microsoft voices
+        voice.name.includes('Microsoft David') ||
+        voice.name.includes('Microsoft Mark') ||
+        // Fallback to any English voice
+        (voice.lang.startsWith('en') && voice.localService)
+      ) || voices.find(voice => voice.lang.startsWith('en'));
+
+      if (preferredVoice) {
+        utterance.voice = preferredVoice;
+        console.log('Using voice:', preferredVoice.name);
+      }
+
+      window.speechSynthesis.speak(utterance);
+    };
+
+    utterance.onend = () => {
+      setPlayingAudio(null);
+      setIsPaused(false);
+      currentAudioTypeRef.current = null;
+      currentUtteranceRef.current = null;
+      unmuteGeminiAudio(); // Unmute Gemini when audio finishes
+    };
+
+    utterance.onerror = () => {
+      console.error('Speech synthesis failed');
+      setPlayingAudio(null);
+      setIsPaused(false);
+      currentAudioTypeRef.current = null;
+      currentUtteranceRef.current = null;
+      unmuteGeminiAudio(); // Unmute Gemini on error
+    };
+
+    // Load voices if not already loaded
+    if (window.speechSynthesis.getVoices().length > 0) {
+      loadVoices();
+    } else {
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+  };
 
   const startSession = async () => {
     try {
@@ -60,6 +213,11 @@ const VoiceDemo: React.FC<VoiceDemoProps> = ({ isOpen, onClose }) => {
             if (inputCtx) {
               const source = inputCtx.createMediaStreamSource(stream);
               const scriptProcessor = inputCtx.createScriptProcessor(4096, 1, 1);
+
+              // Store references for muting/unmuting
+              mediaStreamSourceRef.current = source;
+              scriptProcessorRef.current = scriptProcessor;
+
               scriptProcessor.onaudioprocess = (e) => {
                 const inputData = e.inputBuffer.getChannelData(0);
                 sessionPromiseRef.current?.then(s => {
@@ -74,13 +232,14 @@ const VoiceDemo: React.FC<VoiceDemoProps> = ({ isOpen, onClose }) => {
           },
           onmessage: async (m) => {
             const audio = m.serverContent?.modelTurn?.parts[0]?.inlineData?.data;
-            if (audio && outputAudioContextRef.current && outputAudioContextRef.current.state !== 'closed') {
+            // Don't play Gemini audio if pre-recorded audio is playing
+            if (audio && outputAudioContextRef.current && outputAudioContextRef.current.state !== 'closed' && !playingAudio) {
                const ctx = outputAudioContextRef.current;
                nextStartTimeRef.current = Math.max(nextStartTimeRef.current, ctx.currentTime);
                try {
                  const buffer = await decodeAudioData(decode(audio), ctx, 24000, 1);
                  const s = ctx.createBufferSource();
-                 s.buffer = buffer; 
+                 s.buffer = buffer;
                  s.connect(outputNode);
                  s.start(nextStartTimeRef.current);
                  nextStartTimeRef.current += buffer.duration;
@@ -110,18 +269,31 @@ const VoiceDemo: React.FC<VoiceDemoProps> = ({ isOpen, onClose }) => {
   };
 
   const stopSession = () => {
+    // Stop speech synthesis if playing
+    if (window.speechSynthesis.speaking || window.speechSynthesis.paused) {
+      window.speechSynthesis.cancel();
+    }
+    setPlayingAudio(null);
+    setIsPaused(false);
+    currentAudioTypeRef.current = null;
+    currentUtteranceRef.current = null;
+
+    // Clear audio node references
+    scriptProcessorRef.current = null;
+    mediaStreamSourceRef.current = null;
+
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(t => t.stop());
       streamRef.current = null;
     }
-    
+
     if (inputAudioContextRef.current) {
       if (inputAudioContextRef.current.state !== 'closed') {
         inputAudioContextRef.current.close().catch(e => console.debug("Input context close fail", e));
       }
       inputAudioContextRef.current = null;
     }
-    
+
     if (outputAudioContextRef.current) {
       if (outputAudioContextRef.current.state !== 'closed') {
         outputAudioContextRef.current.close().catch(e => console.debug("Output context close fail", e));
@@ -135,16 +307,16 @@ const VoiceDemo: React.FC<VoiceDemoProps> = ({ isOpen, onClose }) => {
     }
 
     if (sessionPromiseRef.current) {
-      sessionPromiseRef.current.then(s => { 
-        try { 
+      sessionPromiseRef.current.then(s => {
+        try {
           if (s && typeof s.close === 'function') {
-            s.close(); 
+            s.close();
           }
-        } catch(e) {} 
+        } catch(e) {}
       });
       sessionPromiseRef.current = null;
     }
-    
+
     sourcesRef.current.forEach(s => {
       try { s.stop(); } catch(e) {}
     });
@@ -203,6 +375,46 @@ const VoiceDemo: React.FC<VoiceDemoProps> = ({ isOpen, onClose }) => {
              <h2 className="text-8xl md:text-[12rem] font-serif font-black italic tracking-tighter leading-none">
                 {status === 'connected' ? "HEARING" : status === 'connecting' ? "SYNCING" : "OFFLINE"}
              </h2>
+
+             {/* Navigation Buttons */}
+             <div className="flex flex-wrap gap-4 mt-8">
+                <button
+                   onClick={() => playPrerecordedAudio('current-issues')}
+                   className={`px-6 py-3 border font-mono text-xs tracking-widest transition-all uppercase ${
+                      playingAudio === 'current-issues'
+                         ? isPaused
+                            ? 'bg-yellow-600 text-obsidian border-yellow-600'
+                            : 'bg-blaze text-obsidian border-blaze animate-pulse'
+                         : 'border-white/20 text-ghost hover:bg-blaze hover:text-obsidian hover:border-blaze'
+                   }`}
+                >
+                   {playingAudio === 'current-issues' ? (isPaused ? '⏸ Paused' : '▶ Playing...') : 'Current Issues'}
+                </button>
+                <button
+                   onClick={() => playPrerecordedAudio('use-cases')}
+                   className={`px-6 py-3 border font-mono text-xs tracking-widest transition-all uppercase ${
+                      playingAudio === 'use-cases'
+                         ? isPaused
+                            ? 'bg-yellow-600 text-obsidian border-yellow-600'
+                            : 'bg-blaze text-obsidian border-blaze animate-pulse'
+                         : 'border-white/20 text-ghost hover:bg-blaze hover:text-obsidian hover:border-blaze'
+                   }`}
+                >
+                   {playingAudio === 'use-cases' ? (isPaused ? '⏸ Paused' : '▶ Playing...') : 'Our Use Cases'}
+                </button>
+                <button
+                   onClick={() => playPrerecordedAudio('what-we-provide')}
+                   className={`px-6 py-3 border font-mono text-xs tracking-widest transition-all uppercase ${
+                      playingAudio === 'what-we-provide'
+                         ? isPaused
+                            ? 'bg-yellow-600 text-obsidian border-yellow-600'
+                            : 'bg-blaze text-obsidian border-blaze animate-pulse'
+                         : 'border-white/20 text-ghost hover:bg-blaze hover:text-obsidian hover:border-blaze'
+                   }`}
+                >
+                   {playingAudio === 'what-we-provide' ? (isPaused ? '⏸ Paused' : '▶ Playing...') : 'What We Provide'}
+                </button>
+             </div>
           </div>
 
           <div className="w-full h-64 border-y border-white/10 relative overflow-hidden flex items-center">

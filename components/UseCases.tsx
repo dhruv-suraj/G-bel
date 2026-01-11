@@ -40,7 +40,7 @@ const UseCases: React.FC = () => {
   return (
     <section id="use-cases" className="py-40 bg-obsidian border-b border-white/10">
       <div className="max-w-7xl mx-auto px-4">
-        
+
         <div className="flex items-center space-x-6 mb-24 overflow-hidden">
           <h2 className="text-6xl md:text-[10rem] font-serif font-black text-ghost italic tracking-tighter leading-none">
             SCALED <br/> <span className="text-outline">OPERATIONS</span>
@@ -49,7 +49,7 @@ const UseCases: React.FC = () => {
 
         <div className="flex flex-col">
           {cases.map((uc, i) => (
-            <motion.div 
+            <motion.div
               key={uc.id}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}

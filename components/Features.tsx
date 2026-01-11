@@ -15,7 +15,7 @@ const Features: React.FC = () => {
   return (
     <section id="features" className="py-40 bg-obsidian">
       <div className="max-w-7xl mx-auto px-4">
-        
+
         <div className="flex flex-col md:flex-row justify-between items-end mb-24 border-b-4 border-blaze pb-8">
            <h3 className="text-5xl md:text-[7rem] font-serif font-black text-ghost tracking-tighter leading-none italic uppercase">
              Core <br/> Intel
@@ -25,7 +25,7 @@ const Features: React.FC = () => {
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-px bg-white/10 border border-white/10">
           {cards.map((card, i) => (
-            <motion.div 
+            <motion.div
               key={i}
               whileHover={{ backgroundColor: "#FF4D00", color: "#050505" }}
               className="bg-obsidian p-8 aspect-square flex flex-col justify-between transition-all duration-300 group"
